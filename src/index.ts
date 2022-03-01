@@ -2,6 +2,8 @@ import 'dotenv/config';
 import http from 'http';
 import express from 'express';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+
 import Cors from './lib/cors';
 
 import handleError from './handleError';
@@ -14,6 +16,7 @@ const server = http.createServer(app);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(cookieParser());
 app.use(Cors);
 
 app.use('/enter', enterRoute);
