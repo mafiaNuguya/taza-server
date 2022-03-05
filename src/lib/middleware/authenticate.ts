@@ -1,4 +1,5 @@
 import JWT from 'jsonwebtoken';
+import userHelper from '../websocket/redis/userHelper';
 
 const authenticate = async (req, res, next) => {
   if (!req.cookies[process.env.TOKEN_NAME]) {
@@ -10,9 +11,19 @@ const authenticate = async (req, res, next) => {
       req.cookies[process.env.TOKEN_NAME],
       process.env.TOKEN_SECRET
     );
+    const userInfo = await userHelper.getUser((decoded as any).name, {
+      id: true,
+      channel: true,
+    });
+
+    if (!userInfo.id) {
+      throw new Error();
+    }
+
     req.user = {
       id: (decoded as any).id,
       name: (decoded as any).name,
+      ...(userInfo.channel && { channel: userInfo.channel }),
     };
     next();
   } catch (error) {

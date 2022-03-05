@@ -1,8 +1,9 @@
 import * as express from 'express';
 
 type User = {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
+  channel?: string;
 };
 
 declare global {

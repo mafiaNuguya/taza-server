@@ -9,6 +9,7 @@ import Cors from './lib/cors';
 import handleError from './handleError';
 import enterRoute from './routes/enter';
 import userRoute from './routes/user';
+import game from './routes/game';
 import WebSocket from './lib/websocket';
 
 const app = express();
@@ -21,10 +22,9 @@ app.use(Cors);
 
 app.use('/enter', enterRoute);
 app.use('/user', userRoute);
+app.use('/game', game);
 
 app.use(handleError);
 
-server.listen(process.env.PORT, () =>
-  console.log(`🚀running on port: ${process.env.PORT}`)
-);
+server.listen(process.env.PORT, () => console.log(`🚀running on port: ${process.env.PORT}`));
 WebSocket(server);
