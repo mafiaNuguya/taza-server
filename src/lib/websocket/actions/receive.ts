@@ -1,26 +1,28 @@
-type Role = 'mafia' | 'police' | 'doctor' | 'civil';
-
-export type RoleCounts = {
-  [key in Role]: number;
-};
-
-export type GameType = '4set' | '6set' | 'custom';
-
-export type CreateGameData = {
-  roomName: string;
-  isPrivate: boolean;
-  gameType: GameType;
-  roleCounts: RoleCounts;
-};
-
 type EnterAction = {
   type: 'enter';
   channel: string;
 };
 
-type CreateGameAction = {
-  type: 'createGame';
-  gameData: CreateGameData;
+type CallAction = {
+  type: 'call';
+  to: string;
+  description: RTCSessionDescriptionInit;
 };
 
-export type ReceiveAction = EnterAction | CreateGameAction;
+type AnswerAction = {
+  type: 'answer';
+  to: string;
+  description: RTCSessionDescriptionInit;
+};
+
+type CandidateAction = {
+  type: 'candidate';
+  to: string;
+  candidate: RTCIceCandidateInit | null;
+};
+
+export type ReceiveAction =
+  | EnterAction
+  | CallAction
+  | AnswerAction
+  | CandidateAction;

@@ -1,5 +1,19 @@
-import type { GameType, RoleCounts } from './actions/receive';
 import Session from './Session';
+
+type Role = 'mafia' | 'police' | 'doctor' | 'civil';
+
+export type RoleCounts = {
+  [key in Role]: number;
+};
+
+export type GameType = '4set' | '6set' | 'custom';
+
+export type CreateGameData = {
+  roomName: string;
+  isPrivate: boolean;
+  gameType: GameType;
+  roleCounts: RoleCounts;
+};
 
 class Game {
   gameId: string;

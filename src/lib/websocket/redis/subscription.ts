@@ -1,3 +1,4 @@
+import { SendAction } from '../actions/send';
 import Session from '../Session';
 import { globalSubscriber } from './client';
 import prefixer from './prefixer';
@@ -27,7 +28,6 @@ class Subscription {
       this.subscriptionMap.set(key, new Set());
     }
     this.addSession(channel, session);
-    await userHelper.listChannel(channel, session);
   }
 
   async unsubscribe(channel, session) {
@@ -39,7 +39,7 @@ class Subscription {
     this.getSessionSet(channel)?.add(session);
   }
 
-  private deleteSession(channel: string, session: Session) {
+  deleteSession(channel: string, session: Session) {
     this.getSessionSet(channel)?.delete(session);
   }
 
@@ -63,7 +63,7 @@ class Subscription {
     return Array.from(sessionSet).find(session => session.id === sessionId);
   }
 
-  dispatch(key: string, message: object) {
+  dispatch(key: string, message: SendAction) {
     const sessionSet = this.subscriptionMap.get(key);
 
     if (!sessionSet) return;

@@ -1,9 +1,11 @@
+import type { User } from '../../../@types/express';
+import type Session from '../Session';
+
 import { v4 } from 'uuid';
 
-import { User } from '../../../@types/express';
-import Session from '../Session';
 import { localRedisClient } from './client';
 import prefixer from './prefixer';
+import subscription from './subscription';
 
 const userHelper = {
   async getUser(

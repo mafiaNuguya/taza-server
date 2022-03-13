@@ -6,6 +6,7 @@ import JWT from 'jsonwebtoken';
 import Session from './Session';
 import userHelper from './redis/userHelper';
 import subscription from './redis/subscription';
+import prefixer from './redis/prefixer';
 
 interface User {
   id: string;
@@ -25,11 +26,15 @@ export default function (server: Server) {
     });
     socket.on('close', async function close() {
       await subscription.unsubscribe(session.currentChannel, session);
+      await subscription.deleteSession(prefixer.direct(user.id), this);
       console.log(`disconnected: ${session.name}`);
     });
   });
 
   server.on('upgrade', async (req, socket, head) => {
+    if (!req.headers.cookie) {
+      throw new Error();
+    }
     const cookies = cookie.parse(req.headers.cookie);
 
     try {
