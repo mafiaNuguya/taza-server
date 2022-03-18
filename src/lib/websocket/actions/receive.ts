@@ -1,6 +1,6 @@
 type EnterAction = {
   type: 'enter';
-  channel: string;
+  gameId: string;
 };
 
 type CallAction = {
@@ -21,8 +21,4 @@ type CandidateAction = {
   candidate: RTCIceCandidateInit | null;
 };
 
-export type ReceiveAction =
-  | EnterAction
-  | CallAction
-  | AnswerAction
-  | CandidateAction;
+export type ReceiveAction = EnterAction | CallAction | AnswerAction | CandidateAction;

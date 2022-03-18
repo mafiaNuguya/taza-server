@@ -1,6 +1,6 @@
 const prefixer = {
   user: (name: string) => `#user:${name}`,
-  channel: (channel: string) => `#channel:${channel}`,
+  game: (gameId: string) => `#game:${gameId}`,
   direct: (id: string) => `#direct:${id}`,
 };
 

@@ -1,28 +1,19 @@
-import type { User } from '../../../@types/express';
 import type Session from '../Session';
 
 import { v4 } from 'uuid';
 
 import { localRedisClient } from './client';
 import prefixer from './prefixer';
-import subscription from './subscription';
 
 const userHelper = {
-  async getUser(
-    name: string,
-    { id, channel }: { id?: boolean; channel?: boolean }
-  ): Promise<User> {
+  async getUser(name: string, { id, ingame }: { id?: boolean; ingame?: boolean }): Promise<User> {
     const userInfo: User = {};
 
     if (id) {
-      userInfo.id = await (
-        await localRedisClient
-      ).hGet(prefixer.user(name), 'id');
+      userInfo.id = await (await localRedisClient).hGet(prefixer.user(name), 'id');
     }
-    if (channel) {
-      userInfo.channel = await (
-        await localRedisClient
-      ).hGet(prefixer.user(name), 'channel');
+    if (ingame) {
+      userInfo.ingame = await (await localRedisClient).hGet(prefixer.user(name), 'ingame');
     }
 
     return userInfo;
@@ -43,17 +34,13 @@ const userHelper = {
     };
   },
   async logoutUser(session: Session) {
-    await (
-      await localRedisClient
-    ).hDel(prefixer.user(session.name), ['id', 'channel']);
+    await (await localRedisClient).hDel(prefixer.user(session.name), ['id', 'ingame']);
   },
-  async listChannel(channel: string, session: Session) {
-    await (
-      await localRedisClient
-    ).hSet(prefixer.user(session.name), 'channel', channel);
+  async saveUserIngame(gameId: string, session: Session) {
+    await (await localRedisClient).hSet(prefixer.user(session.name), 'ingame', gameId);
   },
-  async unListChannel(session: Session) {
-    await (await localRedisClient).hDel(prefixer.user(session.name), 'channel');
+  async deleteUserIngame(session: Session) {
+    await (await localRedisClient).hDel(prefixer.user(session.name), 'ingame');
   },
 };
 

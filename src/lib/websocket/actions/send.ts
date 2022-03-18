@@ -1,19 +1,27 @@
 type ConnectedAction = {
   type: 'connected';
-  channel: string;
+  gameInfo: GameInfo;
   sessionId: string;
   sessionName: string;
 };
 
 type EnteredAction = {
   type: 'entered';
-  channel: string;
-  sessionId: string;
+  gameId: string;
+  enteredId: string;
+  enteredName: string;
+};
+
+type EnteredFailAction = {
+  type: 'enteredFail';
+  gameId: string;
+  reason: string;
 };
 
 type CalledAction = {
   type: 'called';
   from: string;
+  name: string;
   description: RTCSessionDescriptionInit;
 };
 
@@ -32,46 +40,41 @@ type CandidatedAction = {
 export type SendAction =
   | ConnectedAction
   | EnteredAction
+  | EnteredFailAction
   | CalledAction
   | AnsweredAction
   | CandidatedAction;
 
 const actionCreator = {
-  connected: (
-    channel: string,
-    sessionId: string,
-    sessionName: string
-  ): ConnectedAction => ({
+  connected: (gameInfo: GameInfo, sessionId: string, sessionName: string): ConnectedAction => ({
     type: 'connected',
-    channel,
+    gameInfo,
     sessionId,
     sessionName,
   }),
-  entered: (channel: string, sessionId: string): EnteredAction => ({
+  entered: (gameId: string, enteredId: string, enteredName: string): EnteredAction => ({
     type: 'entered',
-    channel,
-    sessionId,
+    gameId,
+    enteredId,
+    enteredName,
   }),
-  called: (
-    from: string,
-    description: RTCSessionDescriptionInit
-  ): CalledAction => ({
+  enteredFail: (gameId: string, reason: string): EnteredFailAction => ({
+    type: 'enteredFail',
+    gameId,
+    reason,
+  }),
+  called: (from: string, name: string, description: RTCSessionDescriptionInit): CalledAction => ({
     type: 'called',
     from,
+    name,
     description,
   }),
-  answered: (
-    from: string,
-    description: RTCSessionDescriptionInit
-  ): AnsweredAction => ({
+  answered: (from: string, description: RTCSessionDescriptionInit): AnsweredAction => ({
     type: 'answered',
     from,
     description,
   }),
-  candidated: (
-    from: string,
-    candidate: RTCIceCandidateInit | null
-  ): CandidatedAction => ({
+  candidated: (from: string, candidate: RTCIceCandidateInit | null): CandidatedAction => ({
     type: 'candidated',
     from,
     candidate,

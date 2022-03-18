@@ -1,6 +1,5 @@
 import express from 'express';
 import JWT from 'jsonwebtoken';
-import subscription from '../lib/websocket/redis/subscription';
 
 import userHelper from '../lib/websocket/redis/userHelper';
 

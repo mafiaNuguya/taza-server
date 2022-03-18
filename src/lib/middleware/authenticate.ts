@@ -7,23 +7,19 @@ const authenticate = async (req, res, next) => {
   }
 
   try {
-    const decoded = await JWT.verify(
-      req.cookies[process.env.TOKEN_NAME],
-      process.env.TOKEN_SECRET
-    );
+    const decoded = await JWT.verify(req.cookies[process.env.TOKEN_NAME], process.env.TOKEN_SECRET);
     const userInfo = await userHelper.getUser((decoded as any).name, {
       id: true,
-      channel: true,
+      ingame: true,
     });
 
     if (!userInfo.id) {
       throw new Error();
     }
-
     req.user = {
       id: (decoded as any).id,
       name: (decoded as any).name,
-      ...(userInfo.channel && { channel: userInfo.channel }),
+      ...(userInfo.ingame && { ingame: userInfo.ingame }),
     };
     next();
   } catch (error) {

@@ -2,10 +2,10 @@ import { WebSocket } from 'ws';
 
 import { ReceiveAction } from './actions/receive';
 import actionCreator, { SendAction } from './actions/send';
-import subscription from './redis/subscription';
+import gameHelper from './redis/gameHelper';
 import { publishToChannel } from './redis/client';
 import prefixer from './redis/prefixer';
-import userHelper from './redis/userHelper';
+import directHelper from './redis/directHelper';
 
 class Session {
   socket: WebSocket;
@@ -17,16 +17,17 @@ class Session {
     this.socket = socket;
     this.id = id;
     this.name = name;
-    this.informConnected(gameId);
-    subscription.subscribe(prefixer.direct(id), this);
+    this.connected(gameId);
   }
 
   emit(data: SendAction) {
     this.socket.send(JSON.stringify(data));
   }
 
-  informConnected(gameId: string) {
-    const connectedAction = actionCreator.connected(gameId, this.id, this.name);
+  async connected(gameId: string) {
+    await directHelper.createDirect(this);
+    const game = gameHelper.getGame(gameId);
+    const connectedAction = actionCreator.connected(game, this.id, this.name);
     this.emit(connectedAction);
   }
 
@@ -34,40 +35,34 @@ class Session {
     this.socket.close();
   }
 
-  private async enterChannel(channel: string) {
-    const enteredSession = subscription.getSession(channel, this.id);
+  private async enterGame(gameId: string) {
+    // => 게임이 없거나 이미진행 중이면 없는게임이라고 클라이언트에 알려야함
+    // const foundSession = gameHelper.findSessionInGame(gameId, this.id);
 
-    if (enteredSession) {
-      enteredSession.disconnect();
-      this.disconnect();
-      return;
-    }
-    await subscription.subscribe(channel, this);
-    await userHelper.listChannel(channel, this);
-    this.currentChannel = channel;
+    // if (foundSession) {
+    //   foundSession.disconnect();
+    //   this.disconnect();
+    //   return;
+    // }
+    gameHelper.addSessionToGameMemory(gameId, this);
+    this.currentChannel = gameId;
   }
 
   handleMessage(action: ReceiveAction) {
     switch (action.type) {
       case 'enter': {
-        console.log(
-          `receive message that user want to enter ${action.channel}`
-        );
-        this.handleEnter(action.channel);
+        this.handleEnter(action.gameId);
         break;
       }
       case 'call': {
-        console.log(`2. ${this.id}가 ${action.to}에게 전화를 겁니다.`);
         this.handleCall(action.to, action.description);
         break;
       }
       case 'answer': {
-        console.log(`5. ${action.to}로 ${this.id} 가 답변을 보냅니다.`);
         this.handleAnswer(action.to, action.description);
         break;
       }
       case 'candidate': {
-        console.log(`@@${this.id}가 ${action.to}에 candidate 합니다.`);
         this.handleCandidate(action.to, action.candidate);
         break;
       }
@@ -76,31 +71,22 @@ class Session {
     }
   }
 
-  async handleEnter(channel: string) {
-    await this.enterChannel(channel);
-    const enteredAction = actionCreator.entered(channel, this.id);
-    publishToChannel(channel, enteredAction);
+  async handleEnter(gameId: string) {
+    await this.enterGame(gameId);
+    const enteredAction = actionCreator.entered(gameId, this.id, this.name);
+    publishToChannel(prefixer.game(gameId), enteredAction);
   }
 
   handleCall(to: string, description: RTCSessionDescriptionInit) {
-    publishToChannel(
-      prefixer.direct(to),
-      actionCreator.called(this.id, description)
-    );
+    publishToChannel(prefixer.direct(to), actionCreator.called(this.id, this.name, description));
   }
 
   handleAnswer(to: string, description: RTCSessionDescriptionInit) {
-    publishToChannel(
-      prefixer.direct(to),
-      actionCreator.answered(this.id, description)
-    );
+    publishToChannel(prefixer.direct(to), actionCreator.answered(this.id, description));
   }
 
   handleCandidate(to: string, candidate: RTCIceCandidateInit | null) {
-    publishToChannel(
-      prefixer.direct(to),
-      actionCreator.candidated(this.id, candidate)
-    );
+    publishToChannel(prefixer.direct(to), actionCreator.candidated(this.id, candidate));
   }
 }
 
