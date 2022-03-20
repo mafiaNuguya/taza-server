@@ -6,6 +6,7 @@ import JWT from 'jsonwebtoken';
 import Session from './Session';
 import gameHelper from './redis/gameHelper';
 import actionCreator from './actions/send';
+import directHelper from './redis/directHelper';
 
 export default function (server: Server) {
   const wss = new WebSocket.Server({ noServer: true });
@@ -27,7 +28,7 @@ export default function (server: Server) {
       session.handleMessage(actionData);
     });
     socket.on('close', async function close() {
-      gameHelper.quitGame(session.currentChannel, session.id);
+      await session.handleLeave();
     });
   });
 

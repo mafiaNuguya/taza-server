@@ -22,8 +22,9 @@ class DirectHelper {
     this.directMap.set(key, session);
   }
 
-  deleteDirect(sessionId: string) {
+  async deleteDirect(sessionId: string) {
     const key = prefixer.direct(sessionId);
+    await (await globalSubscriber).unsubscribe(key);
     this.directMap.delete(key);
   }
 }

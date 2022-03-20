@@ -17,11 +17,6 @@ interface CheckGameResult {
 class GameHelper {
   private gameMemoryMap = new Map<string, GameInfo>();
 
-  getGame(gameId: string): GameInfo | undefined {
-    const key = prefixer.game(gameId);
-    return this.gameMemoryMap.get(key);
-  }
-
   async createGame(createGameData: CreateGameProps): Promise<GameInfo> {
     const { roomName, isPrivate, gameType, roleInfo, userCount, masterId } = createGameData;
     const gameId = createGameId();
@@ -51,9 +46,15 @@ class GameHelper {
     return createdGame;
   }
 
+  private async deleteGame(gameId: string) {
+    const key = prefixer.game(gameId);
+    await (await globalSubscriber).unsubscribe(key);
+    this.gameMemoryMap.delete(key);
+  }
+
   checkGameAccessible(gameId: string): CheckGameResult {
     const result: CheckGameResult = { accessible: true };
-    const game = this.getGame(gameId);
+    const game = this.getGameInfo(gameId);
 
     if (!game) {
       result.accessible = false;
@@ -68,42 +69,27 @@ class GameHelper {
     return result;
   }
 
-  deleteGame(gameId: string) {
+  getGameInfo(gameId: string): GameInfo | undefined {
     const key = prefixer.game(gameId);
-    this.gameMemoryMap.delete(key);
+    return this.gameMemoryMap.get(key);
   }
 
-  getAllGames(): GameInfo[] {
+  getAllGameInfo(): GameInfo[] {
     return Array.from(this.gameMemoryMap.values());
   }
 
-  addSessionToGameMemory(gameId: string, session: Session) {
-    this.getGame(gameId)?.sessions.push(session);
+  async enterGame(gameId: string, session: Session) {
+    await directHelper.createDirect(session);
+    this.getGameInfo(gameId)?.sessions.push(session);
   }
 
-  quitGame(gameId: string, sessionId: string) {
-    const game = this.getGame(gameId);
+  async leaveGame(gameId: string, sessionId: string) {
+    await directHelper.deleteDirect(sessionId);
+    const game = this.getGameInfo(gameId);
     if (!game) return;
-
-    if (game.onGame) {
-      directHelper.deleteDirect(sessionId);
-    }
-    if (sessionId === game.masterId) {
-      return this.deleteGame(gameId);
-    }
-    const lastSessions = game.sessions.filter(s => s.id !== sessionId);
-    game.sessions = lastSessions;
+    if (sessionId === game.masterId) return this.deleteGame(gameId);
+    game.sessions = game.sessions.filter(s => s.id !== sessionId);
   }
-
-  findSessionInGame(gameId: string, sessionId: string): Session | undefined {
-    return this.getGame(gameId)?.sessions.find(s => s.id === sessionId);
-  }
-
-  // private bookUnListChannel(session: Session) {
-  //   const id = setTimeout(async () => await userHelper.deleteUserIngame(session), 100000);
-  //   const clear = () => clearTimeout(id);
-  //   this.clearUnListMap.set(session.id, clear);
-  // }
 }
 const gameHelper = new GameHelper();
 

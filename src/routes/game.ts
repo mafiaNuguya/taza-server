@@ -6,7 +6,7 @@ import gameHelper from '../lib/websocket/redis/gameHelper';
 const router = express.Router();
 
 router.get('/list', authenticate, async (req, res) => {
-  const gameList = gameHelper.getAllGames().filter(game => !game.onGame && !game.isPrivate);
+  const gameList = gameHelper.getAllGameInfo().filter(game => !game.onGame && !game.isPrivate);
   res.status(200).json({ gameList });
 });
 

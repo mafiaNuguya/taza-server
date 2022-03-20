@@ -17,35 +17,17 @@ class Session {
     this.socket = socket;
     this.id = id;
     this.name = name;
-    this.connected(gameId);
+    this.informConnected(gameId);
   }
 
-  emit(data: SendAction) {
-    this.socket.send(JSON.stringify(data));
-  }
-
-  async connected(gameId: string) {
-    await directHelper.createDirect(this);
-    const game = gameHelper.getGame(gameId);
+  private async informConnected(gameId: string) {
+    const game = gameHelper.getGameInfo(gameId);
     const connectedAction = actionCreator.connected(game, this.id, this.name);
     this.emit(connectedAction);
   }
 
-  disconnect() {
-    this.socket.close();
-  }
-
-  private async enterGame(gameId: string) {
-    // => 게임이 없거나 이미진행 중이면 없는게임이라고 클라이언트에 알려야함
-    // const foundSession = gameHelper.findSessionInGame(gameId, this.id);
-
-    // if (foundSession) {
-    //   foundSession.disconnect();
-    //   this.disconnect();
-    //   return;
-    // }
-    gameHelper.addSessionToGameMemory(gameId, this);
-    this.currentChannel = gameId;
+  emit(data: SendAction) {
+    this.socket.send(JSON.stringify(data));
   }
 
   handleMessage(action: ReceiveAction) {
@@ -72,9 +54,13 @@ class Session {
   }
 
   async handleEnter(gameId: string) {
-    await this.enterGame(gameId);
-    const enteredAction = actionCreator.entered(gameId, this.id, this.name);
-    publishToChannel(prefixer.game(gameId), enteredAction);
+    await gameHelper.enterGame(gameId, this);
+    this.currentChannel = gameId;
+    publishToChannel(prefixer.game(gameId), actionCreator.entered(gameId, this.id, this.name));
+  }
+
+  async handleLeave() {
+    await gameHelper.leaveGame(this.currentChannel, this.id);
   }
 
   handleCall(to: string, description: RTCSessionDescriptionInit) {
