@@ -48,6 +48,9 @@ class Session {
         this.handleCandidate(action.to, action.candidate);
         break;
       }
+      case 'gameStart': {
+        this.handleGameStart(action.gameId);
+      }
       default:
         break;
     }
@@ -63,16 +66,20 @@ class Session {
     await gameHelper.leaveGame(this.currentChannel, this.id);
   }
 
-  handleCall(to: string, description: RTCSessionDescriptionInit) {
+  private handleCall(to: string, description: RTCSessionDescriptionInit) {
     publishToChannel(prefixer.direct(to), actionCreator.called(this.id, this.name, description));
   }
 
-  handleAnswer(to: string, description: RTCSessionDescriptionInit) {
+  private handleAnswer(to: string, description: RTCSessionDescriptionInit) {
     publishToChannel(prefixer.direct(to), actionCreator.answered(this.id, description));
   }
 
-  handleCandidate(to: string, candidate: RTCIceCandidateInit | null) {
+  private handleCandidate(to: string, candidate: RTCIceCandidateInit | null) {
     publishToChannel(prefixer.direct(to), actionCreator.candidated(this.id, candidate));
+  }
+
+  private handleGameStart(gameId: string) {
+    gameHelper.gameStart(gameId);
   }
 }
 

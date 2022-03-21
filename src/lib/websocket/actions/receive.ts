@@ -21,4 +21,14 @@ type CandidateAction = {
   candidate: RTCIceCandidateInit | null;
 };
 
-export type ReceiveAction = EnterAction | CallAction | AnswerAction | CandidateAction;
+type GameStartAction = {
+  type: 'gameStart';
+  gameId: string;
+};
+
+export type ReceiveAction =
+  | EnterAction
+  | CallAction
+  | AnswerAction
+  | CandidateAction
+  | GameStartAction;

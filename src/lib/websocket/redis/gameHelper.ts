@@ -90,6 +90,10 @@ class GameHelper {
     if (sessionId === game.masterId) return this.deleteGame(gameId);
     game.sessions = game.sessions.filter(s => s.id !== sessionId);
   }
+
+  gameStart(gameId: string) {
+    this.getGameInfo(gameId).onGame = true;
+  }
 }
 const gameHelper = new GameHelper();
 
