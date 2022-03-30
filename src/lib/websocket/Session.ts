@@ -2,28 +2,47 @@ import { WebSocket } from 'ws';
 
 import { ReceiveAction } from './actions/receive';
 import actionCreator, { SendAction } from './actions/send';
-import gameHelper from './redis/gameHelper';
 import { publishToChannel } from './redis/client';
 import prefixer from './redis/prefixer';
+import gameHelper from './redis/gameHelper';
 import directHelper from './redis/directHelper';
+import userHelper from './redis/userHelper';
 
 class Session {
   socket: WebSocket;
   id: string;
   name: string;
-  currentChannel?: string;
+  gameId: string;
+  color: string;
+  leaveWorks = new Set<(() => void) | undefined>();
 
-  constructor(socket: WebSocket, id: string, name: string, gameId: string) {
+  constructor(socket: WebSocket, gameId: string, id: string, name: string, color: string) {
     this.socket = socket;
+    this.gameId = gameId;
     this.id = id;
     this.name = name;
-    this.informConnected(gameId);
+    this.color = color;
   }
 
-  private async informConnected(gameId: string) {
-    const game = gameHelper.getGameInfo(gameId);
-    const connectedAction = actionCreator.connected(game, this.id, this.name);
-    this.emit(connectedAction);
+  async enter() {
+    const game = gameHelper.getGame(this.gameId);
+    if (!game) return this.socket.close();
+    this.leaveWorks
+      .add(() => gameHelper.returnColor(this.gameId, this.color))
+      .add(gameHelper.addSessionToGameMemory(this))
+      .add(await directHelper.createDirect(this));
+    await userHelper.saveGameInfoToToken(this);
+    publishToChannel(
+      prefixer.game(this.gameId),
+      actionCreator.entered(game.gameInfo, this.id, this.name, this.color)
+    );
+  }
+
+  leave() {
+    for (const work of this.leaveWorks.values()) {
+      work?.();
+    }
+    publishToChannel(prefixer.game(this.gameId), actionCreator.leaved(this.id));
   }
 
   emit(data: SendAction) {
@@ -32,12 +51,8 @@ class Session {
 
   handleMessage(action: ReceiveAction) {
     switch (action.type) {
-      case 'enter': {
-        this.handleEnter(action.gameId);
-        break;
-      }
       case 'call': {
-        this.handleCall(action.to, action.description);
+        this.handleCall(action.to, action.description, action.color);
         break;
       }
       case 'answer': {
@@ -56,18 +71,11 @@ class Session {
     }
   }
 
-  async handleEnter(gameId: string) {
-    await gameHelper.enterGame(gameId, this);
-    this.currentChannel = gameId;
-    publishToChannel(prefixer.game(gameId), actionCreator.entered(gameId, this.id, this.name));
-  }
-
-  async handleLeave() {
-    await gameHelper.leaveGame(this.currentChannel, this.id);
-  }
-
-  private handleCall(to: string, description: RTCSessionDescriptionInit) {
-    publishToChannel(prefixer.direct(to), actionCreator.called(this.id, this.name, description));
+  private handleCall(to: string, description: RTCSessionDescriptionInit, color: string) {
+    publishToChannel(
+      prefixer.direct(to),
+      actionCreator.called(this.id, this.name, description, color)
+    );
   }
 
   private handleAnswer(to: string, description: RTCSessionDescriptionInit) {
@@ -79,7 +87,7 @@ class Session {
   }
 
   private handleGameStart(gameId: string) {
-    gameHelper.gameStart(gameId);
+    gameHelper.startGame(gameId);
   }
 }
 

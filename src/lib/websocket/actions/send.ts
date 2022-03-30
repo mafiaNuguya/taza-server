@@ -1,15 +1,16 @@
-type ConnectedAction = {
-  type: 'connected';
-  gameInfo: GameInfo;
-  sessionId: string;
-  sessionName: string;
-};
+import { GameInfo } from '../../../@types/express';
 
 type EnteredAction = {
   type: 'entered';
-  gameId: string;
+  gameInfo: GameInfo;
   enteredId: string;
   enteredName: string;
+  color: string;
+};
+
+type LeavedAction = {
+  type: 'leaved';
+  leavedId: string;
 };
 
 type EnteredFailAction = {
@@ -23,6 +24,7 @@ type CalledAction = {
   from: string;
   name: string;
   description: RTCSessionDescriptionInit;
+  color: string;
 };
 
 type AnsweredAction = {
@@ -38,36 +40,46 @@ type CandidatedAction = {
 };
 
 export type SendAction =
-  | ConnectedAction
   | EnteredAction
+  | LeavedAction
   | EnteredFailAction
   | CalledAction
   | AnsweredAction
   | CandidatedAction;
 
 const actionCreator = {
-  connected: (gameInfo: GameInfo, sessionId: string, sessionName: string): ConnectedAction => ({
-    type: 'connected',
-    gameInfo,
-    sessionId,
-    sessionName,
-  }),
-  entered: (gameId: string, enteredId: string, enteredName: string): EnteredAction => ({
+  entered: (
+    gameInfo: GameInfo,
+    enteredId: string,
+    enteredName: string,
+    color: string
+  ): EnteredAction => ({
     type: 'entered',
-    gameId,
+    gameInfo,
     enteredId,
     enteredName,
+    color,
+  }),
+  leaved: (id: string): LeavedAction => ({
+    type: 'leaved',
+    leavedId: id,
   }),
   enteredFail: (gameId: string, reason: string): EnteredFailAction => ({
     type: 'enteredFail',
     gameId,
     reason,
   }),
-  called: (from: string, name: string, description: RTCSessionDescriptionInit): CalledAction => ({
+  called: (
+    from: string,
+    name: string,
+    description: RTCSessionDescriptionInit,
+    color: string
+  ): CalledAction => ({
     type: 'called',
     from,
     name,
     description,
+    color,
   }),
   answered: (from: string, description: RTCSessionDescriptionInit): AnsweredAction => ({
     type: 'answered',

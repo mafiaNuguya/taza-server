@@ -1,12 +1,8 @@
-type EnterAction = {
-  type: 'enter';
-  gameId: string;
-};
-
 type CallAction = {
   type: 'call';
   to: string;
   description: RTCSessionDescriptionInit;
+  color: string;
 };
 
 type AnswerAction = {
@@ -26,9 +22,4 @@ type GameStartAction = {
   gameId: string;
 };
 
-export type ReceiveAction =
-  | EnterAction
-  | CallAction
-  | AnswerAction
-  | CandidateAction
-  | GameStartAction;
+export type ReceiveAction = CallAction | AnswerAction | CandidateAction | GameStartAction;

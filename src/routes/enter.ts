@@ -15,7 +15,7 @@ router.post('/', async (req, res) => {
     });
   }
 
-  const token = await JWT.sign(addedUser, process.env.TOKEN_SECRET);
+  const token = await JWT.sign(addedUser, process.env.TOKEN_SECRET!);
 
   return res.status(200).json({
     ok: true,

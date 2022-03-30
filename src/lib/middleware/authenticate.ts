@@ -1,26 +1,17 @@
-import JWT from 'jsonwebtoken';
+import { RequestHandler } from 'express';
+import validateToken from '../validation/validateToken';
 import userHelper from '../websocket/redis/userHelper';
 
-const authenticate = async (req, res, next) => {
-  if (!req.cookies[process.env.TOKEN_NAME]) {
-    return next();
-  }
+const authenticate: RequestHandler = async (req, res, next) => {
+  if (!req.cookies[process.env.TOKEN_NAME!]) return next();
 
   try {
-    const decoded = await JWT.verify(req.cookies[process.env.TOKEN_NAME], process.env.TOKEN_SECRET);
-    const userInfo = await userHelper.getUser((decoded as any).name, {
-      id: true,
-      ingame: true,
-    });
+    const { id, name } = await validateToken(req.cookies[process.env.TOKEN_NAME!]);
+    const userInfo = await userHelper.getUser(name, { ingame: true });
 
-    if (!userInfo.id) {
-      throw new Error();
-    }
-    req.user = {
-      id: (decoded as any).id,
-      name: (decoded as any).name,
-      ...(userInfo.ingame && { ingame: userInfo.ingame }),
-    };
+    if (!userInfo) throw new Error();
+    if (req.url === '/list') await userHelper.deleteGameInfoFromToken(name);
+    req.user = { id, name };
     next();
   } catch (error) {
     return res.status(401).end();
